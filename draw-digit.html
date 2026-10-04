@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>手写数字画板</title>
+<style>
+  body { font: 18px system-ui, sans-serif; max-width: 540px; margin: 48px auto; padding: 0 20px; color: #222; }
+  canvas { display: block; width: 280px; height: 280px; background: #000; border: 2px solid #555; border-radius: 10px; touch-action: none; cursor: crosshair; }
+  button { margin: 18px 10px 0 0; padding: 10px 16px; font: inherit; cursor: pointer; }
+</style>
+<h1>写一个数字</h1>
+<p>用鼠标在黑色画板上写一个大一点的白色数字（0～9），然后保存图片。</p>
+<canvas id="pad" width="280" height="280"></canvas>
+<button id="clear">清空重画</button><button id="save">保存图片</button>
+<p id="message" role="status"></p>
+<script>
+const pad = document.getElementById('pad');
+const ctx = pad.getContext('2d');
+const message = document.getElementById('message');
+let drawing = false;
+let hasInk = false;
+function clear() {
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, pad.width, pad.height);
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 22;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  drawing = false;
+  hasInk = false;
+  message.textContent = '';
+}
+function point(event) {
+  const rect = pad.getBoundingClientRect();
+  return { x: (event.clientX - rect.left) * pad.width / rect.width,
+           y: (event.clientY - rect.top) * pad.height / rect.height };
+}
+pad.addEventListener('pointerdown', event => {
+  pad.setPointerCapture(event.pointerId);
+  const p = point(event);
+  ctx.beginPath();
+  ctx.moveTo(p.x, p.y);
+  ctx.lineTo(p.x, p.y);
+  ctx.stroke();
+  drawing = true;
+  hasInk = true;
+});
+pad.addEventListener('pointermove', event => {
+  if (!drawing) return;
+  const p = point(event);
+  ctx.lineTo(p.x, p.y);
+  ctx.stroke();
+});
+pad.addEventListener('pointerup', () => { drawing = false; });
+pad.addEventListener('pointercancel', () => { drawing = false; });
+document.getElementById('clear').addEventListener('click', clear);
+document.getElementById('save').addEventListener('click', () => {
+  if (!hasInk) { message.textContent = '请先写一个数字。'; return; }
+  const link = document.createElement('a');
+  link.download = 'my-digit.png';
+  link.href = pad.toDataURL('image/png');
+  link.click();
+  message.textContent = '图片已保存到浏览器的下载文件夹。';
+});
+clear();
+</script>
+</html>
